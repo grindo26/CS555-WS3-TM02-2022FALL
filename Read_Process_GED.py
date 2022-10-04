@@ -132,7 +132,7 @@ for id, val in m_dictFam.items():
         id, val.get("HUSB"), m_dictIndi.get(val.get("HUSB")), val.get("WIFE"), m_dictIndi.get(val.get("WIFE"))])
     
 #Ru's portion
-def birthafterdeath("M3_B2_InputGED.ged")
+def birthafterdeath(p_strFileName)
 #file = open(r'C:\Users\rucha\Desktop\CS - 555 AGILE\ASSIGNMENT\PROJECT\M3B2 PROJECT\M3_B2_InputGED.ged', 'r')
 x = []
 for count, line in enumerate(file):
@@ -153,6 +153,6 @@ for i in range(0,y):
             print("Birth date cant be after marraige date")
 
 
-
+birthafterdeath("M3_B2_InputGED.ged")
 print(m_indiTable)
 print(m_famTable)
