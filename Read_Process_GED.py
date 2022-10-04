@@ -56,6 +56,46 @@ def extractSpouseIDFromLine(p_strLine):
         return "WIFE", l_arrTxt[2]
     return "", ""
 
+def validateMarriageGender(m_dictIndi,m_dictFam,path=0):
+    wrong=[]
+    if path == 0:
+        for i in m_dictFam:
+            male=m_dictFam[i]['Husb']
+            female=m_dictFam[i]['Wife']
+            
+            if m_dictIndi[male]['sex']!='M':
+                wrong.append()
+            elif m_dictIndi[female]['sex']!='F':
+                wrong.append()
+    else:
+        f = open(path, "r")
+        lines = f.read().split('\n')
+        for j in range(len(lines)-1):
+            lst=lines[j].split()
+            if(len(lst))==3:
+                if lst[0]=='0' and lst[2]=='FAM' or lst[1]=='FAM':
+                    lst4=lines[j+5].split()
+
+                if(lst[2]=='FAM'):
+                    lst2=lines[j+1].split()
+                    lst3=lines[j+2].split()
+                    husbandID=lst2[2]
+                    wifeID=lst3[2]
+
+                    for j in range(len(lines)-1):
+                        lst5=lines[j].split()
+                        if(len(lst5)>2):
+                            if lst5[0]=='0' and lst5[2]=='INDI' or lst5[1]=='INDI':
+                                if lst5[2]=='INDI':
+                                    id=lst5[1]
+                                if lst5[1]=='INDI':
+                                    id=lst5[2]
+                                lst6=lines[j+5].split()
+                                if(id==husbandID and lst6[2]!='M'):
+                                    wrong.append([id,lst6[2]])
+                                elif(id==wifeID and lst6[2]!='F'):
+                                    wrong.append([id,lst6[2]])
+    return wrong
 
 def readInputAndPopulateDict(p_strFileName):
     with open(p_strFileName, 'r') as l_inpFile:
