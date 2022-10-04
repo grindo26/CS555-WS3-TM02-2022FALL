@@ -1,6 +1,7 @@
 # if level 0 then check for tags, otherwise simply split
 from collections import OrderedDict
 from prettytable import PrettyTable
+from datetime import datetime
 m_indiTable = PrettyTable()
 m_famTable = PrettyTable()
 m_indiTable.field_names = ["ID", "Name"]
@@ -129,6 +130,28 @@ for id, name in m_dictIndi.items():
 for id, val in m_dictFam.items():
     m_famTable.add_row([
         id, val.get("HUSB"), m_dictIndi.get(val.get("HUSB")), val.get("WIFE"), m_dictIndi.get(val.get("WIFE"))])
+    
+#Ru's portion
+def birthafterdeath("M3_B2_InputGED.ged")
+#file = open(r'C:\Users\rucha\Desktop\CS - 555 AGILE\ASSIGNMENT\PROJECT\M3B2 PROJECT\M3_B2_InputGED.ged', 'r')
+x = []
+for count, line in enumerate(file):
+    x.append(line)
+
+y= len(x)-1
+for i in range(0,y):
+    if(x[i][2:6])=="DEAT":
+        birth = x[i-1][7:].strip()
+        death = x[i+1][7:].strip()
+        if datetime.strptime(birth, '%d %b %Y').date() > datetime.strptime(death, '%d %b %Y').date():
+            print("Birth date cant be after death date")
+
+for i in range(0,y):
+    if(x[i][2:6])=="MARR":
+        marraige = x[i+1][7:].strip()
+        if datetime.strptime(birth, '%d %b %Y').date() > datetime.strptime(marraige, '%d %b %Y').date():
+            print("Birth date cant be after marraige date")
+
 
 
 print(m_indiTable)
