@@ -16,6 +16,13 @@ m_dictFam = OrderedDict()
 # 1 level FAM connections
 
 
+def isIDUnique(id, list_id):
+    if id not in list_id:
+        return True
+    else:
+        return False
+
+
 def extractInfoZeroLevel(p_arrLine):
     l_lvl = p_arrLine[0]
     if checkIfValidTag(p_arrLine[1]) == "Y":
@@ -57,48 +64,51 @@ def extractSpouseIDFromLine(p_strLine):
         return "WIFE", l_arrTxt[2]
     return "", ""
 
-def validateMarriageGender(m_dictIndi,m_dictFam,path=0):
-    wrong=[]
+
+def validateMarriageGender(m_dictIndi, m_dictFam, path=0):
+    wrong = []
     if path == 0:
         for i in m_dictFam:
-            male=m_dictFam[i]['Husb']
-            female=m_dictFam[i]['Wife']
-            
-            if m_dictIndi[male]['sex']!='M':
+            male = m_dictFam[i]['Husb']
+            female = m_dictFam[i]['Wife']
+
+            if m_dictIndi[male]['sex'] != 'M':
                 wrong.append()
-            elif m_dictIndi[female]['sex']!='F':
+            elif m_dictIndi[female]['sex'] != 'F':
                 wrong.append()
     else:
         f = open(path, "r")
         lines = f.read().split('\n')
         for j in range(len(lines)-1):
-            lst=lines[j].split()
-            if(len(lst))==3:
-                if lst[0]=='0' and lst[2]=='FAM' or lst[1]=='FAM':
-                    lst4=lines[j+5].split()
+            lst = lines[j].split()
+            if (len(lst)) == 3:
+                if lst[0] == '0' and lst[2] == 'FAM' or lst[1] == 'FAM':
+                    lst4 = lines[j+5].split()
 
-                if(lst[2]=='FAM'):
-                    lst2=lines[j+1].split()
-                    lst3=lines[j+2].split()
-                    husbandID=lst2[2]
-                    wifeID=lst3[2]
+                if (lst[2] == 'FAM'):
+                    lst2 = lines[j+1].split()
+                    lst3 = lines[j+2].split()
+                    husbandID = lst2[2]
+                    wifeID = lst3[2]
 
                     for j in range(len(lines)-1):
-                        lst5=lines[j].split()
-                        if(len(lst5)>2):
-                            if lst5[0]=='0' and lst5[2]=='INDI' or lst5[1]=='INDI':
-                                if lst5[2]=='INDI':
-                                    id=lst5[1]
-                                if lst5[1]=='INDI':
-                                    id=lst5[2]
-                                lst6=lines[j+5].split()
-                                if(id==husbandID and lst6[2]!='M'):
-                                    wrong.append([id,lst6[2]])
-                                elif(id==wifeID and lst6[2]!='F'):
-                                    wrong.append([id,lst6[2]])
+                        lst5 = lines[j].split()
+                        if (len(lst5) > 2):
+                            if lst5[0] == '0' and lst5[2] == 'INDI' or lst5[1] == 'INDI':
+                                if lst5[2] == 'INDI':
+                                    id = lst5[1]
+                                if lst5[1] == 'INDI':
+                                    id = lst5[2]
+                                lst6 = lines[j+5].split()
+                                if (id == husbandID and lst6[2] != 'M'):
+                                    wrong.append([id, lst6[2]])
+                                elif (id == wifeID and lst6[2] != 'F'):
+                                    wrong.append([id, lst6[2]])
     return wrong
 
+
 def readInputAndPopulateDict(p_strFileName):
+    arrIds = []
     with open(p_strFileName, 'r') as l_inpFile:
         for line in l_inpFile:
             l_arrTxt = line.strip().split(" ", 2)
@@ -108,8 +118,9 @@ def readInputAndPopulateDict(p_strFileName):
                 if l_strTag == "INDI":
                     l_strId = l_strArgs
                     l_strName = extractNameFromLine(next(l_inpFile))
-                    if l_strId not in m_dictIndi:
+                    if l_strId not in m_dictIndi and isIDUnique(l_strId, arrIds):
                         m_dictIndi[l_strId] = l_strName.strip()
+                        arrIds.append(l_strId)
                 elif l_strTag == "FAM":
                     l_strFamId = l_strArgs
                     while True:
@@ -130,29 +141,29 @@ for id, name in m_dictIndi.items():
 for id, val in m_dictFam.items():
     m_famTable.add_row([
         id, val.get("HUSB"), m_dictIndi.get(val.get("HUSB")), val.get("WIFE"), m_dictIndi.get(val.get("WIFE"))])
-    
-#Ru's portion
-def birthafterdeath(p_strFileName)
-#file = open(r'C:\Users\rucha\Desktop\CS - 555 AGILE\ASSIGNMENT\PROJECT\M3B2 PROJECT\M3_B2_InputGED.ged', 'r')
-x = []
-for count, line in enumerate(file):
-    x.append(line)
 
-y= len(x)-1
-for i in range(0,y):
-    if(x[i][2:6])=="DEAT":
-        birth = x[i-1][7:].strip()
-        death = x[i+1][7:].strip()
-        if datetime.strptime(birth, '%d %b %Y').date() > datetime.strptime(death, '%d %b %Y').date():
-            print("Birth date cant be after death date")
-
-for i in range(0,y):
-    if(x[i][2:6])=="MARR":
-        marraige = x[i+1][7:].strip()
-        if datetime.strptime(birth, '%d %b %Y').date() > datetime.strptime(marraige, '%d %b %Y').date():
-            print("Birth date cant be after marraige date")
+# Ru's portion
 
 
-birthafterdeath("M3_B2_InputGED.ged")
+def birthafterdeath(p_strFileName):
+    #file = open(r'C:\Users\rucha\Desktop\CS - 555 AGILE\ASSIGNMENT\PROJECT\M3B2 PROJECT\M3_B2_InputGED.ged', 'r')
+    x = []
+    for count, line in enumerate(file):
+        x.append(line)
+    y = len(x)-1
+    for i in range(0, y):
+        if (x[i][2:6]) == "DEAT":
+            birth = x[i-1][7:].strip()
+            death = x[i+1][7:].strip()
+            if datetime.strptime(birth, '%d %b %Y').date() > datetime.strptime(death, '%d %b %Y').date():
+                print("Birth date cant be after death date")
+    for i in range(0, y):
+        if (x[i][2:6]) == "MARR":
+            marraige = x[i+1][7:].strip()
+            if datetime.strptime(birth, '%d %b %Y').date() > datetime.strptime(marraige, '%d %b %Y').date():
+                print("Birth date cant be after marraige date")
+
+
+# birthafterdeath("M3_B2_InputGED.ged")
 print(m_indiTable)
 print(m_famTable)
