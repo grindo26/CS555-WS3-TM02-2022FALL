@@ -64,7 +64,7 @@ def extractSpouseIDFromLine(p_strLine):
         return "WIFE", l_arrTxt[2]
     return "", ""
 
-
+# Swaraj's portion
 def validateMarriageGender(m_dictIndi, m_dictFam, path=0):
     wrong = []
     if path == 0:
@@ -162,6 +162,53 @@ def birthafterdeath(p_strFileName):
             marraige = x[i+1][7:].strip()
             if datetime.strptime(birth, '%d %b %Y').date() > datetime.strptime(marraige, '%d %b %Y').date():
                 print("Birth date cant be after marraige date")
+  
+  
+# Shoaib's portion
+m_dictIndi={'1a':{'birth':"1 JAN 1860"}}
+def ageValidator(m_dictIndi):
+    wrongAge=[]
+    months = {'JAN':1,'FEB':2,'MAR':3,'APR':4,'MAY':5,'JUN':6,'JUL':7,'AUG':8,'SEP':9,'OCT':10,'NOV':11,'DEC':12}
+    for i in m_dictIndi:
+        print(i)
+        birth = m_dictIndi[i]['birth'].split()
+        birth = datetime.date(int(birth[2]), int(months[birth[1]]), int(birth[0]))
+        # print(birth)
+        if 'death' in m_dictIndi[i].keys():
+            death = m_dictIndi[i]['death'].split()
+            # print(months[death[1]])
+            year=int(death[2])
+            month = int(months[death[1]])
+            day=int(death[0])
+            print(day,month,year)
+            death = datetime.date(year, month, day)
+            age =  death.year - birth.year - ((death.month, death.day) < (birth.month, birth.day))
+            print(age)
+            if age>=150:
+                wrongAge.append(i+" has age:"+str(age)+" which is more than 150")
+        else:
+            today = datetime.date.today()
+            age = today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+            print(age)
+            wrongAge.append(i+" has age:"+str(age)+" which is more than 150")
+    return wrongAge
+  
+  
+
+m_dictIndi={'1a':{'birth':"1 JAN 1860"}}
+def ageCHeck(m_dictIndi):
+    wrongAge=[]
+    months = {'JAN':1,'FEB':2,'MAR':3,'APR':4,'MAY':5,'JUN':6,'JUL':7,'AUG':8,'SEP':9,'OCT':10,'NOV':11,'DEC':12}
+    for i in m_dictIndi:
+        birth = m_dictIndi[i]['birth'].split()
+        birth = datetime.date(int(birth[2]), int(months[birth[1]]), int(birth[0]))
+        # print(birth)
+    
+        today = datetime.date.today()
+        if birth > today:
+            wrongAge.append(i+" has birth in future "+str(birth))
+    return wrongAge
+
 
 
 # birthafterdeath("M3_B2_InputGED.ged")
