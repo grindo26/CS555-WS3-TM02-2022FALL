@@ -89,46 +89,99 @@ def extractSpouseIDFromLine(p_strLine):
         return "WIFE", l_arrTxt[2]
     return "", ""
 
+# Swaraj's portion
+
 
 def validateMarriageGender(m_dictIndi, m_dictFam, path=0):
     wrong = []
     if path == 0:
         for i in m_dictFam:
-            male = m_dictFam[i]['Husb']
-            female = m_dictFam[i]['Wife']
+            maleID = m_dictFam[i]['Husb']
+            femaleID = m_dictFam[i]['Wife']
 
-            if m_dictIndi[male]['sex'] != 'M':
-                wrong.append()
-            elif m_dictIndi[female]['sex'] != 'F':
-                wrong.append()
+            if m_dictIndi[maleID]['sex'] != 'M':
+                wrong.append(maleID+"with wrong sex:" +
+                             m_dictIndi[femaleID]['sex']+" is married to "+femaleID)
+            elif m_dictIndi[femaleID]['sex'] != 'F':
+                wrong.append(femaleID+"with wrong sex:" +
+                             m_dictIndi[femaleID]['sex']+" is married to "+maleID)
     else:
         f = open(path, "r")
         lines = f.read().split('\n')
-        for j in range(len(lines)-1):
-            lst = lines[j].split()
-            if (len(lst)) == 3:
-                if lst[0] == '0' and lst[2] == 'FAM' or lst[1] == 'FAM':
-                    lst4 = lines[j+5].split()
+        size = len(lines)
+        for j in range(0, size):
+            wordList = lines[j].split()
+            if (len(wordList)) == 3 and wordList[0] == '0':
+                if wordList[2] == 'FAM' or wordList[1] == 'FAM':
+                    if lines[j+1].split()[1] != 'HUSB' and lines[j+2].split()[1] != 'WIFE':
+                        continue
+                    if lines[j+1].split()[1] == 'HUSB':
+                        nextLineList = lines[j+1].split()
+                        husbID = nextLineList[2]
 
-                if (lst[2] == 'FAM'):
-                    lst2 = lines[j+1].split()
-                    lst3 = lines[j+2].split()
-                    husbandID = lst2[2]
-                    wifeID = lst3[2]
+                    if lines[j+2].split()[1] == 'WIFE':
+                        nextLineList = lines[j+2].split()
+                        wifeID = nextLineList[2]
 
-                    for j in range(len(lines)-1):
-                        lst5 = lines[j].split()
-                        if (len(lst5) > 2):
-                            if lst5[0] == '0' and lst5[2] == 'INDI' or lst5[1] == 'INDI':
-                                if lst5[2] == 'INDI':
-                                    id = lst5[1]
-                                if lst5[1] == 'INDI':
-                                    id = lst5[2]
-                                lst6 = lines[j+5].split()
-                                if (id == husbandID and lst6[2] != 'M'):
-                                    wrong.append([id, lst6[2]])
-                                elif (id == wifeID and lst6[2] != 'F'):
-                                    wrong.append([id, lst6[2]])
+                    k = 0
+                    while (k < size):
+                        lst3 = lines[k].split()
+                        if (len(lst3) >= 2):
+                            if lst3[0] == '0' and lst3[1] == husbID:
+                                k += 1
+                                while (k < size):
+                                    lst3 = lines[k].split()
+                                    if lst3[1] == 'SEX' and lst3[2] != 'M':
+                                        wrong.append(
+                                            husbID+" with wrong sex:"+lst3[2]+" is married to "+wifeID)
+                                        break
+                                    if lst3[0] == '0':
+                                        break
+                                    k += 1
+
+                        lst3 = lines[k].split()
+                        if (len(lst3) >= 2):
+                            if lst3[0] == '0' and lst3[1] == wifeID:
+                                k += 1
+                                while (k < size):
+                                    lst3 = lines[k].split()
+                                    if lst3[1] == 'SEX' and lst3[2] != 'F':
+                                        wrong.append(
+                                            wifeID+"with wrong sex:"+lst3[2]+" is married to "+husbID+"")
+                                        break
+                                    if lst3[0] == '0':
+                                        break
+                                    k += 1
+
+                        k += 1
+        wrong = set(wrong)
+        return wrong
+
+
+def birthAfterMOmDeath(m_dictIndi, m_dictFam):
+    wrong = []
+    months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
+              'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
+    for i in m_dictFam:
+        maleID = m_dictFam[i]['Husb']
+        femaleID = m_dictFam[i]['Wife']
+        if 'death' in m_dictIndi[femaleID].keys():
+            motherdeath = m_dictIndi[femaleID]['death'].split()
+            year = int(motherdeath[2])
+            month = int(months[motherdeath[1]])
+            day = int(motherdeath[0])
+            mother_death = datetime.date(year, month, day)
+            children = m_dictFam[i]['Children']
+            for child in children:
+                childBirth = m_dictIndi[child]['birth']
+                childBirth = childBirth.split()
+                year = int(childBirth[2])
+                month = int(months[childBirth[1]])
+                day = int(childBirth[0])
+                child_date = datetime.date(year, month, day)
+                if mother_death < child_date:
+                    wrong.append(child+" birth "+str(child_date) +
+                                 " is before mother death date "+str(mother_death))
     return wrong
 
 
@@ -271,6 +324,62 @@ def birthafterdeath(p_strFileName):
             marraige = x[i+1][7:].strip()
             if datetime.strptime(birth, '%d %b %Y').date() > datetime.strptime(marraige, '%d %b %Y').date():
                 print("Birth date cant be after marraige date")
+
+
+# Shoaib's portion
+m_dictIndi = {'1a': {'birth': "1 JAN 1860"}}
+
+
+def ageValidator(m_dictIndi):
+    wrongAge = []
+    months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
+              'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
+    for i in m_dictIndi:
+        print(i)
+        birth = m_dictIndi[i]['birth'].split()
+        birth = datetime.date(int(birth[2]), int(
+            months[birth[1]]), int(birth[0]))
+        # print(birth)
+        if 'death' in m_dictIndi[i].keys():
+            death = m_dictIndi[i]['death'].split()
+            # print(months[death[1]])
+            year = int(death[2])
+            month = int(months[death[1]])
+            day = int(death[0])
+            print(day, month, year)
+            death = datetime.date(year, month, day)
+            age = death.year - birth.year - \
+                ((death.month, death.day) < (birth.month, birth.day))
+            print(age)
+            if age >= 150:
+                wrongAge.append(i+" has age:"+str(age) +
+                                " which is more than 150")
+        else:
+            today = datetime.date.today()
+            age = today.year - birth.year - \
+                ((today.month, today.day) < (birth.month, birth.day))
+            print(age)
+            wrongAge.append(i+" has age:"+str(age)+" which is more than 150")
+    return wrongAge
+
+
+m_dictIndi = {'1a': {'birth': "1 JAN 1860"}}
+
+
+def ageCHeck(m_dictIndi):
+    wrongAge = []
+    months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
+              'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
+    for i in m_dictIndi:
+        birth = m_dictIndi[i]['birth'].split()
+        birth = datetime.date(int(birth[2]), int(
+            months[birth[1]]), int(birth[0]))
+        # print(birth)
+
+        today = datetime.date.today()
+        if birth > today:
+            wrongAge.append(i+" has birth in future "+str(birth))
+    return wrongAge
 
 
 def birthAfterMOmDeath():
