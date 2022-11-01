@@ -9,7 +9,6 @@ import EstabilishDBConn
 inpFileName = "M3_B2_InputGED.ged"
 
 g_ResultString = ""
-
 m_indiTable = PrettyTable()
 m_famTable = PrettyTable()
 m_indiTable.field_names = ["ID", "Name",
@@ -206,7 +205,7 @@ def populateFamily(l_inpFile, l_strId):
     last_pos = l_inpFile.tell()
     line = l_inpFile.readline()
     while line.strip().split(" ", 2)[0] != 0 and line.strip().split(" ", 2)[0] != '0' and line != '':
-        if line.strip().split(" ", 2)[1] in Keys and line.strip().split(" ", 2)[1] not in ["PEDI", "DATE", "MARR"]:
+        if line.strip().split(" ", 2)[1] in Keys and line.strip().split(" ", 2)[1] not in ["PEDI"]:
             if line.strip().split(" ", 2)[1] == "CHIL":
                 m_dictFam[-1][Keys[line.strip().split(
                     " ", 2)[1]]].append(line.strip().split(" ", 2)[2])
@@ -226,20 +225,21 @@ def populateIndividual(l_inpFile, l_strId, keyAdd):
         arrIds.append(l_strId)
     last_pos = l_inpFile.tell()
     line = l_inpFile.readline()
-    while line.strip().split(" ", 2)[0] != 0 and line.strip().split(" ", 2)[0] != '0' and line != '':
-        if line.strip().split(" ", 2)[1] in Keys:
-            if line.strip().split(" ", 2)[1] == "BIRT" or line.strip().split(" ", 2)[1] == "DEAT" or line.strip().split(" ", 2)[1] == "DIV" or line.strip().split(" ", 2)[1] == "MARR":
-                keyAdd = Keys[line.strip().split(" ", 2)[1]]
+    l_arrLine = line.strip().split(" ", 2)[0]
+    l_strKey = l_arrLine[1]
+    l_strArgs = l_arrLine[2]
+    while l_strKey != 0 and l_strKey != '0' and line != '':
+        if l_strKey in Keys:
+            if l_strKey == "BIRT" or l_strKey == "DEAT" or l_strKey == "DIV" or l_strKey == "MARR":
+                keyAdd = Keys[l_strKey]
                 last_pos = l_inpFile.tell()
                 line = l_inpFile.readline()
                 continue
             else:
                 if keyAdd != "":
-                    m_dictIndi[-1][keyAdd + Keys[line.strip().split(
-                        " ", 2)[1]]] = line.strip().split(" ", 2)[2]
+                    m_dictIndi[-1][keyAdd + Keys[l_strKey]] = l_strArgs
                 else:
-                    m_dictIndi[-1][Keys[line.strip().split(
-                        " ", 2)[1]]] = line.strip().split(" ", 2)[2]
+                    m_dictIndi[-1][Keys[l_strKey]] = l_strArgs
                 keyAdd = ""
         last_pos = l_inpFile.tell()
         line = l_inpFile.readline()
@@ -327,7 +327,7 @@ def birthafterdeath(p_strFileName):
 
 
 # Shoaib's portion
-m_dictIndi = {'1a': {'birth': "1 JAN 1860"}}
+# m_dictIndi = {'1a': {'birth': "1 JAN 1860"}}
 
 
 def ageValidator(m_dictIndi):
@@ -363,7 +363,7 @@ def ageValidator(m_dictIndi):
     return wrongAge
 
 
-m_dictIndi = {'1a': {'birth': "1 JAN 1860"}}
+# m_dictIndi = {'1a': {'birth': "1 JAN 1860"}}
 
 
 def ageCHeck(m_dictIndi):
