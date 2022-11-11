@@ -13,7 +13,7 @@ m_indiTable = PrettyTable()
 m_famTable = PrettyTable()
 m_indiTable.field_names = ["ID", "Name",
                            "SEX", "BIRTHDATE", "DEATHDATE", "CHILDREN", "SPOUSE"]
-m_famTable.field_names = ["ID", "CHILDREN", "Husband ID", "Wife ID"]
+m_famTable.field_names = ["ID", "CHILDREN", "Husband ID", "Wife ID", "MARRIAGE DATE"]
 m_dictIndi = []
 m_dictFam = []
 # 0 level Indi Id
@@ -198,22 +198,57 @@ def readRecords(collectionName, filterCondn):
     return collection.find(filterCondn)
 
 
+def populateMarriageDate(p_inpFile):
+    last_pos = l_inpFile.tell()
+    line = l_inpFile.readline()
+    if line.strip().split(" ", 2)[1] == "MARR":
+        keyAdd = Keys[line.strip().split(" ", 2)[1]]
+        last_pos = l_inpFile.tell()
+        line = l_inpFile.readline()
+        
+    else:
+        if keyAdd != "":
+            m_dictIndi[-1][keyAdd + Keys[line.strip().split(
+                " ", 2)[1]]] = line.strip().split(" ", 2)[2]
+        else:
+            m_dictIndi[-1][Keys[line.strip().split(
+                " ", 2)[1]]] = line.strip().split(" ", 2)[2]
+        keyAdd = ""
+
 def populateFamily(l_inpFile, l_strId):
+    keyAdd = ""
+    marriageDate = "NA"
     if isIDUnique(l_strId, arrIds):
         m_dictFam.append({idKey: l_strId, "CHILDREN": []})
         arrIds.append(l_strId)
     last_pos = l_inpFile.tell()
     line = l_inpFile.readline()
     while line.strip().split(" ", 2)[0] != 0 and line.strip().split(" ", 2)[0] != '0' and line != '':
-        if line.strip().split(" ", 2)[1] in Keys and line.strip().split(" ", 2)[1] not in ["PEDI"]:
+        print(line)
+        if line.strip().split(" ", 2)[1] in Keys:
+            print("heree")
             if line.strip().split(" ", 2)[1] == "CHIL":
                 m_dictFam[-1][Keys[line.strip().split(
                     " ", 2)[1]]].append(line.strip().split(" ", 2)[2])
-                last_pos = l_inpFile.tell()
+            elif line.strip().split(" ", 2)[1] == "MARR":
+                keyAdd = Keys[line.strip().split(" ", 2)[1]]
                 line = l_inpFile.readline()
+                continue
             else:
-                m_dictFam[-1][Keys[line.strip().split(
+                if keyAdd != "":
+                    m_dictFam[-1][keyAdd + Keys[line.strip().split(
                     " ", 2)[1]]] = line.strip().split(" ", 2)[2]
+                    keyAdd = ""
+                else:
+                    print("VCFNGCHHMHXHCg")
+                    # print(line)
+                    for i in m_dictFam:
+                        print(i)
+                    # print(m_dictFam,"dictfam")
+                    print(Keys[line.strip().split(" ", 2)[1]],"holaa")
+                    print(line.strip().split(" ", 2))
+                    print(Keys[line.strip().split(" ", 2)[1]],keyAdd,"pratikkkkkkk")
+                    m_dictFam[-1][Keys[line.strip().split(" ", 2)[1]]] = line.strip().split(" ", 2)[2]
         last_pos = l_inpFile.tell()
         line = l_inpFile.readline()
     l_inpFile.seek(last_pos)
@@ -225,21 +260,20 @@ def populateIndividual(l_inpFile, l_strId, keyAdd):
         arrIds.append(l_strId)
     last_pos = l_inpFile.tell()
     line = l_inpFile.readline()
-    l_arrLine = line.strip().split(" ", 2)[0]
-    l_strKey = l_arrLine[1]
-    l_strArgs = l_arrLine[2]
-    while l_strKey != 0 and l_strKey != '0' and line != '':
-        if l_strKey in Keys:
-            if l_strKey == "BIRT" or l_strKey == "DEAT" or l_strKey == "DIV" or l_strKey == "MARR":
-                keyAdd = Keys[l_strKey]
+    while line.strip().split(" ", 2)[0] != 0 and line.strip().split(" ", 2)[0] != '0' and line != '':
+        if line.strip().split(" ", 2)[1] in Keys:
+            if line.strip().split(" ", 2)[1] == "BIRT" or line.strip().split(" ", 2)[1] == "DEAT" or line.strip().split(" ", 2)[1] == "DIV" or line.strip().split(" ", 2)[1] == "MARR":
+                keyAdd = Keys[line.strip().split(" ", 2)[1]]
                 last_pos = l_inpFile.tell()
                 line = l_inpFile.readline()
                 continue
             else:
                 if keyAdd != "":
-                    m_dictIndi[-1][keyAdd + Keys[l_strKey]] = l_strArgs
+                    m_dictIndi[-1][keyAdd + Keys[line.strip().split(
+                        " ", 2)[1]]] = line.strip().split(" ", 2)[2]
                 else:
-                    m_dictIndi[-1][Keys[l_strKey]] = l_strArgs
+                    m_dictIndi[-1][Keys[line.strip().split(
+                        " ", 2)[1]]] = line.strip().split(" ", 2)[2]
                 keyAdd = ""
         last_pos = l_inpFile.tell()
         line = l_inpFile.readline()
@@ -290,6 +324,8 @@ def handleEmptyKeysInFam():
             elem[Keys["WIFE"]] = tempWife
         if Keys["WIFE"] not in elem:
             elem[Keys["WIFE"]] = "NA"
+        if Keys["MARR"]+Keys["DATE"] not in elem:
+            elem[Keys["MARR"]+Keys["DATE"]] = "NA"; 
 
         # elem[Keys["HUSB"]] = "NA" if Keys["HUSB"] not in elem else elem[Keys["HUSB"]]
         # elem[Keys["WIFE"]] = "NA" if Keys["WIFE"] not in elem else elem[Keys["WIFE"]]
