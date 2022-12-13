@@ -1,5 +1,4 @@
 # if level 0 then check for tags, otherwise simply split
-from cmath import rect
 from unittest import result
 from prettytable import PrettyTable
 from datetime import datetime
@@ -14,7 +13,8 @@ m_indiTable = PrettyTable()
 m_famTable = PrettyTable()
 m_indiTable.field_names = ["ID", "Name",
                            "SEX", "BIRTHDATE", "DEATHDATE", "CHILDREN", "SPOUSE"]
-m_famTable.field_names = ["ID", "CHILDREN", "Husband ID", "Wife ID", "MARRIAGE DATE"]
+m_famTable.field_names = ["ID", "CHILDREN",
+                          "Husband ID", "Wife ID", "MARRIAGE DATE", "DIVORCE DATE"]
 m_dictIndi = []
 m_dictFam = []
 # 0 level Indi Id
@@ -160,7 +160,7 @@ def populateMarriageDate(p_inpFile):
         keyAdd = Keys[line.strip().split(" ", 2)[1]]
         last_pos = l_inpFile.tell()
         line = l_inpFile.readline()
-        
+
     else:
         if keyAdd != "":
             m_dictIndi[-1][keyAdd + Keys[line.strip().split(
@@ -169,6 +169,7 @@ def populateMarriageDate(p_inpFile):
             m_dictIndi[-1][Keys[line.strip().split(
                 " ", 2)[1]]] = line.strip().split(" ", 2)[2]
         keyAdd = ""
+
 
 def populateFamily(l_inpFile, l_strId):
     keyAdd = ""
@@ -185,25 +186,19 @@ def populateFamily(l_inpFile, l_strId):
             if line.strip().split(" ", 2)[1] == "CHIL":
                 m_dictFam[-1][Keys[line.strip().split(
                     " ", 2)[1]]].append(line.strip().split(" ", 2)[2])
-            elif line.strip().split(" ", 2)[1] == "MARR":
+            elif line.strip().split(" ", 2)[1] == "MARR" or line.strip().split(" ", 2)[1] == "DIV":
                 keyAdd = Keys[line.strip().split(" ", 2)[1]]
                 line = l_inpFile.readline()
                 continue
             else:
                 if keyAdd != "":
                     m_dictFam[-1][keyAdd + Keys[line.strip().split(
-                    " ", 2)[1]]] = line.strip().split(" ", 2)[2]
+                        " ", 2)[1]]] = line.strip().split(" ", 2)[2]
                     keyAdd = ""
                 else:
-                    print("VCFNGCHHMHXHCg")
-                    # print(line)
-                    for i in m_dictFam:
-                        print(i)
                     # print(m_dictFam,"dictfam")
-                    print(Keys[line.strip().split(" ", 2)[1]],"holaa")
-                    print(line.strip().split(" ", 2))
-                    print(Keys[line.strip().split(" ", 2)[1]],keyAdd,"pratikkkkkkk")
-                    m_dictFam[-1][Keys[line.strip().split(" ", 2)[1]]] = line.strip().split(" ", 2)[2]
+                    m_dictFam[-1][Keys[line.strip().split(" ", 2)[1]]
+                                  ] = line.strip().split(" ", 2)[2]
         last_pos = l_inpFile.tell()
         line = l_inpFile.readline()
     l_inpFile.seek(last_pos)
@@ -280,10 +275,9 @@ def handleEmptyKeysInFam():
         if Keys["WIFE"] not in elem:
             elem[Keys["WIFE"]] = "NA"
         if Keys["MARR"]+Keys["DATE"] not in elem:
-            elem[Keys["MARR"]+Keys["DATE"]] = "NA"; 
-
-        # elem[Keys["HUSB"]] = "NA" if Keys["HUSB"] not in elem else elem[Keys["HUSB"]]
-        # elem[Keys["WIFE"]] = "NA" if Keys["WIFE"] not in elem else elem[Keys["WIFE"]]
+            elem[Keys["MARR"]+Keys["DATE"]] = "NA"
+        if Keys["DIV"]+Keys["DATE"] not in elem:
+            elem[Keys["DIV"]+Keys["DATE"]] = "NA"
 
 
 def addIntoIndiOutputTable():
@@ -317,11 +311,15 @@ def birthafterdeath(p_strFileName):
                 print("Birth date cant be after marraige date")
 
 
+<<<<<<< HEAD
 # Shoaib's portion
 
 
 
 def AgeValidator(m_dictIndi):
+=======
+def ageValidator(m_dictIndi):
+>>>>>>> 965572e5e7071fae9a65ac627b496b15c27dc3c8
     wrongAge = []
     months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
               'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
@@ -354,8 +352,12 @@ def AgeValidator(m_dictIndi):
     return wrongAge
 
 
+<<<<<<< HEAD
 
 def birthCheck(m_dictIndi):
+=======
+def ageCHeck(m_dictIndi):
+>>>>>>> 965572e5e7071fae9a65ac627b496b15c27dc3c8
     wrongAge = []
     months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
               'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
