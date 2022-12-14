@@ -225,9 +225,7 @@ def populateFamily(l_inpFile, l_strId):
     last_pos = l_inpFile.tell()
     line = l_inpFile.readline()
     while line.strip().split(" ", 2)[0] != 0 and line.strip().split(" ", 2)[0] != '0' and line != '':
-        print(line)
         if line.strip().split(" ", 2)[1] in Keys:
-            print("heree")
             if line.strip().split(" ", 2)[1] == "CHIL":
                 m_dictFam[-1][Keys[line.strip().split(
                     " ", 2)[1]]].append(line.strip().split(" ", 2)[2])
@@ -361,7 +359,6 @@ def ageValidator(m_dictIndi):
     months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
               'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
     for i in m_dictIndi:
-        print(i)
         birth = m_dictIndi[i]['birth'].split()
         birth = datetime.date(int(birth[2]), int(
             months[birth[1]]), int(birth[0]))
@@ -372,11 +369,9 @@ def ageValidator(m_dictIndi):
             year = int(death[2])
             month = int(months[death[1]])
             day = int(death[0])
-            print(day, month, year)
             death = datetime.date(year, month, day)
             age = death.year - birth.year - \
                 ((death.month, death.day) < (birth.month, birth.day))
-            print(age)
             if age >= 150:
                 wrongAge.append(i+" has age:"+str(age) +
                                 " which is more than 150")
@@ -384,7 +379,6 @@ def ageValidator(m_dictIndi):
             today = datetime.date.today()
             age = today.year - birth.year - \
                 ((today.month, today.day) < (birth.month, birth.day))
-            print(age)
             wrongAge.append(i+" has age:"+str(age)+" which is more than 150")
     return wrongAge
 
@@ -403,6 +397,85 @@ def ageCHeck(m_dictIndi):
         if birth > today:
             wrongAge.append(i+" has birth in future "+str(birth))
     return wrongAge
+
+
+def fetchBirthForIndi(indiId):
+    for indi in m_dictIndi:
+        if indi["_id"] == indiId:
+            return indi["BIRTHDATE"]
+    return False
+
+
+def fetchDeathForIndi(indiId):
+    for indi in m_dictIndi:
+        if indi["_id"] == indiId:
+            return indi["DEATHDATE"]
+    return False
+
+# returns 1 if date1 is greater
+# 2 if date2 is greater
+# 0 if dates are equal
+
+
+def compareDates(date1, date2):
+    date1 = datetime.strptime(date1, "%d %b %Y")
+    date2 = datetime.strptime(date2, "%d %b %Y")
+    if date1 > date2:
+        return 1
+    elif date1 < date2:
+        return 2
+    else:
+        return 0
+
+
+def child_born_before_marriage():
+    for fam in m_dictFam:
+        marrDate = fam["MARRIAGEDATE"]
+        if marrDate != "NA":
+            arrChildren = fam["CHILDREN"]
+            for child in arrChildren:
+                if (fetchBirthForIndi(child) and (compareDates(fetchBirthForIndi(child), marrDate)) == 1):
+                    print(
+                        f"Violation for Fam {fam['_id']} child {child} was born {fetchBirthForIndi(child)} before marriage date {marrDate}")
+
+
+def divorceBeforeMarriage():
+    for fam in m_dictFam:
+        marrDate = fam["MARRIAGEDATE"]
+        divDate = fam["DiVORCEDATE"]
+        if marrDate != "NA" and divDate != "NA" and compareDates(marrDate, divDate) == 1:
+            print(
+                f"Violation for Fam {fam['_id']} divorce date {divDate} is before marriage date {marrDate}")
+
+
+def validateDates():
+    for ind in m_dictIndi:
+        for key in ['BIRTHDATE', 'DEATHDATE']:
+            if key in ind:
+                try:
+                    datetime.strptime(ind[key], '%d %b %Y')
+                except ValueError:
+                    print(
+                        f"Violation for Individual {ind['_id']} Invalid date format for {key}")
+
+    for fam in m_dictFam:
+        for key in ['MARRIAGEDATE', 'DIVORCEDATE']:
+            if key in fam:
+                try:
+                    datetime.strptime(fam[key], '%d %b %Y')
+                except ValueError:
+                    print(
+                        f'Violation for Individual {fam["_id"]} Invalid date format for {key}')
+
+
+def divorceAfterDeath():
+    for fam in m_dictFam:
+        divDate = fam["DiVORCEDATE"]
+        husbDeath = fetchDeathForIndi(fam["HUSBAND"])
+        wifeDeath = fetchDeathForIndi(fam["WIFE"])
+        if (husbDeath and wifeDeath and (compareDates(divDate, husbDeath) == 1 or compareDates(divDate, wifeDeath) == 1)):
+            print(
+                f'Violation for fam {fam["_id"]} divorce date {divDate} is after husbands {husbDeath} or wifes death{wifeDeath}')
 
 
 def birthAfterMOmDeath():
@@ -453,3 +526,7 @@ print("Family Data:\n")
 print(m_famTable)
 birthafterdeath(inpFileName)
 # birthAfterMOmDeath()
+child_born_before_marriage()
+
+print(m_dictIndi)
+print(m_dictFam)
