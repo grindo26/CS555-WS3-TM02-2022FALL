@@ -4,6 +4,8 @@ from prettytable import PrettyTable
 from datetime import datetime
 from pymongo import MongoClient
 import EstabilishDBConn
+import datetime
+from dateutil import relativedelta
 
 inpFileName = "M3_B2_InputGED.ged"
 
@@ -91,96 +93,158 @@ def extractSpouseIDFromLine(p_strLine):
 # Swaraj's portion
 
 
-def validateMarriageGender(m_dictIndi, m_dictFam, path=0):
+def validateMarriageGender(m_dictIndi, m_dictFam):
     wrong = []
-    if path == 0:
-        for i in m_dictFam:
-            maleID = m_dictFam[i]['Husb']
-            femaleID = m_dictFam[i]['Wife']
-
-            if m_dictIndi[maleID]['sex'] != 'M':
-                wrong.append(maleID+"with wrong sex:" +
-                             m_dictIndi[femaleID]['sex']+" is married to "+femaleID)
-            elif m_dictIndi[femaleID]['sex'] != 'F':
-                wrong.append(femaleID+"with wrong sex:" +
-                             m_dictIndi[femaleID]['sex']+" is married to "+maleID)
-    else:
-        f = open(path, "r")
-        lines = f.read().split('\n')
-        size = len(lines)
-        for j in range(0, size):
-            wordList = lines[j].split()
-            if (len(wordList)) == 3 and wordList[0] == '0':
-                if wordList[2] == 'FAM' or wordList[1] == 'FAM':
-                    if lines[j+1].split()[1] != 'HUSB' and lines[j+2].split()[1] != 'WIFE':
-                        continue
-                    if lines[j+1].split()[1] == 'HUSB':
-                        nextLineList = lines[j+1].split()
-                        husbID = nextLineList[2]
-
-                    if lines[j+2].split()[1] == 'WIFE':
-                        nextLineList = lines[j+2].split()
-                        wifeID = nextLineList[2]
-
-                    k = 0
-                    while (k < size):
-                        lst3 = lines[k].split()
-                        if (len(lst3) >= 2):
-                            if lst3[0] == '0' and lst3[1] == husbID:
-                                k += 1
-                                while (k < size):
-                                    lst3 = lines[k].split()
-                                    if lst3[1] == 'SEX' and lst3[2] != 'M':
-                                        wrong.append(
-                                            husbID+" with wrong sex:"+lst3[2]+" is married to "+wifeID)
-                                        break
-                                    if lst3[0] == '0':
-                                        break
-                                    k += 1
-
-                        lst3 = lines[k].split()
-                        if (len(lst3) >= 2):
-                            if lst3[0] == '0' and lst3[1] == wifeID:
-                                k += 1
-                                while (k < size):
-                                    lst3 = lines[k].split()
-                                    if lst3[1] == 'SEX' and lst3[2] != 'F':
-                                        wrong.append(
-                                            wifeID+"with wrong sex:"+lst3[2]+" is married to "+husbID+"")
-                                        break
-                                    if lst3[0] == '0':
-                                        break
-                                    k += 1
-
-                        k += 1
-        wrong = set(wrong)
-        return wrong
+    for obj in m_dictFam:
+        husb = obj['HUSBAND']
+        wife = obj['WIFE']
+        for person in m_dictIndi:
+            # print(person)
+            if person['_id']==husb:
+                # print(person)
+                if person['SEX']!="M":
+                    wrong.append("Invalid gender for id: "+husb+" with a gender value: "+person['SEX']+" in family:"+obj['_id'])
+            if person['_id']==wife:
+                if person['SEX']!="F":
+                    wrong.append("Invalid gender for id: "+wife+" with a gender value: "+person['SEX']+" in family:"+obj['_id'])
+    return wrong
+ 
 
 
-def birthAfterMOmDeath(m_dictIndi, m_dictFam):
+def birthAfterMomDeath(m_dictIndi,m_dictFam):
     wrong = []
     months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
               'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
-    for i in m_dictFam:
-        maleID = m_dictFam[i]['Husb']
-        femaleID = m_dictFam[i]['Wife']
-        if 'death' in m_dictIndi[femaleID].keys():
-            motherdeath = m_dictIndi[femaleID]['death'].split()
-            year = int(motherdeath[2])
-            month = int(months[motherdeath[1]])
-            day = int(motherdeath[0])
-            mother_death = datetime.date(year, month, day)
-            children = m_dictFam[i]['Children']
-            for child in children:
-                childBirth = m_dictIndi[child]['birth']
-                childBirth = childBirth.split()
-                year = int(childBirth[2])
-                month = int(months[childBirth[1]])
-                day = int(childBirth[0])
-                child_date = datetime.date(year, month, day)
-                if mother_death < child_date:
-                    wrong.append(child+" birth "+str(child_date) +
-                                 " is before mother death date "+str(mother_death))
+    for fam in m_dictFam:
+        maleID = fam[Keys["HUSB"]]
+        femaleID = fam[Keys["WIFE"]]
+        for person in m_dictIndi:
+            if person['_id']==femaleID:
+                if person['DEATHDATE']!='NA':
+                    motherDeath = person['DEATHDATE'].split()
+                    year = int(motherDeath[2])
+                    month = months[motherDeath[1]]
+                    day = int(motherDeath[0])
+                    motherDeath = datetime.date(year, month, day)
+                    children = fam['CHILDREN']
+                    for child in children:
+                        for check in m_dictIndi:
+                            if check['_id']==child:
+                                childBirth = check['BIRTHDATE'].split()
+                                year = int(childBirth[2])
+                                month = months[childBirth[1]]
+                                day = int(childBirth[0])
+                                childBirth = datetime.date(year, month, day)
+                                if motherDeath < childBirth:
+                                    wrong.append("Error child birth after Mother's death : "+child+" birth "+str(childBirth) +" is after mother death date "+str(motherDeath))
+    return wrong
+
+
+def divBeforeMarr(m_dictFam):
+    wrong = []
+    months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
+              'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
+    for fam in m_dictFam:
+        birth = fam['DIVORCE'].split()
+        year = int(birth[2])
+        month = months[birth[1]]
+        day = int(birth[0])
+        div = datetime.date(year, month, day)
+        birth = fam['MARRIAGE'].split()
+        year = int(birth[2])
+        month = months[birth[1]]
+        day = int(birth[0])
+        marr = datetime.date(year, month, day)
+        if div < marr:
+            wrong.append("Error: Divorce date cannot be before marriage date for family:"+fam['_id'])
+    return wrong
+
+def marrAfterFourteen(m_dictFam,m_dictIndi):
+    wrong = []
+    months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
+              'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
+    for fam in m_dictFam:
+        husb = fam['HUSBAND']
+        wife = fam['WIFE']
+        birth = fam['MARRIAGE'].split()
+        year = int(birth[2])
+        month = months[birth[1]]
+        day = int(birth[0])
+        marr = datetime.date(year, month, day)
+        for ind in m_dictIndi:
+            if ind['_id']==husb or ind['_id']==wife:
+                birth = ind['BIRTHDATE'].split()
+                year = int(birth[2])
+                month = months[birth[1]]
+                day = int(birth[0])
+                birth = datetime.date(year, month, day)
+                diff = marr.year - birth.year - ((marr.month, marr.day) < (birth.month, birth.day))
+                if diff < 14:
+                    wrong.append("Error: Marriage cannot be done at an age of less than 14 for individual:"+ind['_id'])
+    return wrong
+
+
+
+
+
+def lessThanFifteenSiblings(m_dictFam):
+    wrong = []
+    for fam in m_dictFam:
+        if len(fam['CHILDREN']) > 15:
+            wrong.append("Error: Family "+fam['_id']+" has "+len(fam['CHILDREN'])+" children which is more than 15")
+    return wrong
+
+
+
+def maleLastNameValid(m_dictFam,m_dictIndi):
+    wrong = []
+    for fam in m_dictFam:
+        husb = fam['HUSBAND']
+        for ind in m_dictIndi:
+            if ind['_id']== husb:
+                name = ind['_id'].split('/')
+                fatherLastName = name[1]
+        for indi in m_dictIndi:
+            if indi['_id'] in fam['CHILDREN']:
+                name = ind['_id'].split('/')
+                childLastName = name[1]
+                if fatherLastName != childLastName:
+                    wrong.append("Error: Last Name of child: "+indi['_id']+" is not same is father: "+husb)
+    return wrong
+
+def childMotherDateApart(m_dictFam, m_dictIndi):
+    wrong = []
+    months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
+              'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
+    for family in m_dictFam:
+        birthdates = []
+        motherBirth = 0
+        for person in m_dictIndi:
+            if person['_id'] in family['CHILDREN']:
+                birthdates.append([person['BIRTHDATE'].split(),person['_id']])
+            if person['_id'] == family['WIFE']:
+                motherBirth = person['BIRTHDATE'].split()
+        motherBirthDate = datetime.date(int(motherBirth[2]), months[motherBirth[1]], int(motherBirth[0]))
+        dates = []
+        for birth in birthdates:
+            date = datetime.date(int(birth[0][2]), months[birth[0][1]], int(birth[0][0]))
+            dates.append([date,birth[1]])
+        elderChild = dates[0][0]
+        id = dates[0][1]
+        for date1 in dates:
+            for date2 in dates:
+                if date2[0] == date1[0]:
+                    continue
+                if date2<date1:
+                    elderChild = date2[0]
+                    id = date2[1]
+                else:
+                    elderChild = date1
+                    id = date1[1]
+        diff = relativedelta.relativedelta(elderChild, motherBirthDate)
+        diff_in_years = diff.years
+        if abs(diff_in_years)<14:
+            wrong.append('The age difference between mother with ID '+family['WIFE']+' and elder child '+id+' is not more than 14 years. The age diff is only '+str(abs(diff_in_years)))
     return wrong
 
 
@@ -354,49 +418,61 @@ def birthafterdeath(p_strFileName):
                 print("Birth date cant be after marraige date")
 
 
-def ageValidator(m_dictIndi):
+# Shoaib's portion
+
+
+
+def AgeValidator(m_dictIndi):
     wrongAge = []
     months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
               'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
-    for i in m_dictIndi:
-        birth = m_dictIndi[i]['birth'].split()
-        birth = datetime.date(int(birth[2]), int(
-            months[birth[1]]), int(birth[0]))
+    for ind in m_dictIndi:
+        birth = ind['BIRTHDATE'].split()
+        year = int(birth[2])
+        month = months[birth[1]]
+        day = int(birth[0])
+        birth = datetime.date(year, month, day)
         # print(birth)
-        if 'death' in m_dictIndi[i].keys():
-            death = m_dictIndi[i]['death'].split()
+        if ind['DEATHDATE']!='NA':
+            death = ind['DEATHDATE'].split()
             # print(months[death[1]])
             year = int(death[2])
-            month = int(months[death[1]])
+            month = months[death[1]]
             day = int(death[0])
             death = datetime.date(year, month, day)
-            age = death.year - birth.year - \
-                ((death.month, death.day) < (birth.month, birth.day))
+            age = death.year - birth.year - ((death.month, death.day) < (birth.month, birth.day))
             if age >= 150:
-                wrongAge.append(i+" has age:"+str(age) +
-                                " which is more than 150")
+                wrongAge.append("Invalid age error: "+ind['_id']+" has age:"+str(age) +" which is more than 150")
+            if age <= 0:
+                wrongAge.append("Invalid age error: "+ind['_id']+" has age:"+str(age) +" which is less than or equal to 0")
         else:
             today = datetime.date.today()
-            age = today.year - birth.year - \
-                ((today.month, today.day) < (birth.month, birth.day))
-            wrongAge.append(i+" has age:"+str(age)+" which is more than 150")
+            age = today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+            if age >= 150:
+                wrongAge.append("Invalid age error: "+ind['_id']+" has age:"+str(age) +" which is more than 150")
+            if age <= 0:
+                wrongAge.append("Invalid age error: "+ind['_id']+" has age:"+str(age) +" which is less than or equal to 0")
     return wrongAge
 
 
-def ageCHeck(m_dictIndi):
+
+def birthCheck(m_dictIndi):
     wrongAge = []
     months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
               'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
-    for i in m_dictIndi:
-        birth = m_dictIndi[i]['birth'].split()
-        birth = datetime.date(int(birth[2]), int(
-            months[birth[1]]), int(birth[0]))
+    for person in m_dictIndi:
+        birth = person['BIRTHDATE'].split()
+        year = int(birth[2])
+        month = months[birth[1]]
+        day = int(birth[0])
+        birth = datetime.date(year, month, day)
         # print(birth)
 
         today = datetime.date.today()
         if birth > today:
-            wrongAge.append(i+" has birth in future "+str(birth))
+            wrongAge.append("Person cannot have birth in future. Person:"+person['_id']+" has birth in future "+str(birth))
     return wrongAge
+
 
 
 def fetchBirthForIndi(indiId):
@@ -524,9 +600,26 @@ print("Individuals Data:\n")
 print(m_indiTable)
 print("Family Data:\n")
 print(m_famTable)
+
+# birthafterdeath(inpFileName)
+
+print("__________________________________________________________________________________________________")
+print(m_dictFam)
+print("__________________________________________________________________________________________________")
+print(m_dictIndi)
+print("__________________________________________________________________________________________________")
+
+
+
+
+print(validateMarriageGender(m_dictIndi, m_dictFam))
+print(birthAfterMomDeath(m_dictIndi,m_dictFam))
+print(divBeforeMarr(m_dictFam))
+print(marrAfterFourteen(m_dictFam,m_dictIndi))
+print(lessThanFifteenSiblings(m_dictFam))
+print(maleLastNameValid(m_dictFam,m_dictIndi))
+print(childMotherDateApart(m_dictFam, m_dictIndi))
 birthafterdeath(inpFileName)
 # birthAfterMOmDeath()
 child_born_before_marriage()
 
-print(m_dictIndi)
-print(m_dictFam)
